@@ -1,0 +1,33 @@
+.buttons-container {
+  background-color: green;
+}
+
+.title-main {
+  background-color: black !important;
+  color: white !important;
+  font-size: 72px;
+  padding-top: 50px;
+  padding-bottom: 30px;
+}
+
+.members-main {
+  background-color: white !important;
+  color: black;
+  font-size: 25px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.workshops-main {
+  background-color: #9c9c9c !important;
+}
+
+.workshop-card {
+  width: 100% !important;
+}
+
+.workshop-card .card-img-top {
+  max-width: 100% !important;
+  max-height: 200px !important;
+  padding:auto !important;
+}
