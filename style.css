@@ -24,6 +24,7 @@
 
 .workshop-card {
   width: 100% !important;
+  margin-top: 25px;
 }
 
 .workshop-card .card-img-top {

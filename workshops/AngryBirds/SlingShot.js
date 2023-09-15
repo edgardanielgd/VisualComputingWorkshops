@@ -1,6 +1,8 @@
 import config from '/workshops/AngryBirds/config.js';
 import Ground from '/workshops/AngryBirds/Ground.js';
 
+const { World } = Matter;
+
 class SlingShot {
   constructor(body, img, world, max_distance) {
     const options = {
@@ -48,7 +50,7 @@ class SlingShot {
       )
     ) {
 
-      this.deattach();
+      this.deattach(mConstraint);
     }
 
   }
@@ -67,7 +69,7 @@ class SlingShot {
     };*/
   }
 
-  deattach() {
+  deattach(mConstraint) {
     this.sling.bodyB.collisionFilter = {
       category: config.BOX_CATEGORY,
       group: -1,
@@ -75,7 +77,8 @@ class SlingShot {
     };
 
     this.sling.bodyB = null;
-    this.sling.length = 0;
+    mConstraint.constraint.bodyB = null;
+    // World.remove( this.world, mConstraint);
   }
 
   reset() {

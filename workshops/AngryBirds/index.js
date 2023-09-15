@@ -91,6 +91,18 @@ let s = (sk) => {
       }
     });
     World.add(world, mouseConstraint);
+
+    Events.on(engine, "beforeUpdate", () => {
+      // Check if sting is too large
+      if (slingshot.reset()) {
+        console.log("aa")
+        /*Matter.World.remove(world, mouseConstraint);
+        setTimeout(function() {
+          World.add(world, mouseConstraint);
+        }, 1000); // 1000 milisegundos (1 segundo)*/
+        slingshot.deattach(mouseConstraint);
+      }
+    });
     Events.on(engine, 'afterUpdate',
       () => {
         slingshot.fly(
@@ -100,14 +112,7 @@ let s = (sk) => {
           // Creo que es aquí que se actualiza la resortera con el nuevo pajaro pero se buguea aaa
 
         
-        // Check if sting is too large
-        /*if (slingshot.reset()) {
-          console.log("aa")
-          Matter.World.remove(world, mouseConstraint);
-          setTimeout(function() {
-            World.add(world, mouseConstraint);
-          }, 1000); // 1000 milisegundos (1 segundo)
-        }*/
+        
       }
     );
     const drawInterface = () => {
