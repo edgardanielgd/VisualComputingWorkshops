@@ -5,6 +5,10 @@ let rules = {
   "F": "FF"
 }
 
+let len = 3;
+let ang;
+let drawRules;
+
 let word = "X";
 let s = (sk) => {
 
@@ -29,22 +33,18 @@ let s = (sk) => {
   
   sk.setup = () =>{
     sk.createCanvas(710, 400, sk.WEBGL); 
+    drawRules ={
+      'F':() =>{
+        sk.line(0, 0, 0, -len, 0, 0);
+        sk.translate(0,-len,0);
+      }
+    }
     mouseReleased()
   }
 
   sk.draw = () =>{
     sk.background(100); 
-    sk.fill(255);
-
-    //sk.orbitControl(); 
-    sk.orbitControl(2, 2, 2);
     
-    sk.push();
-    sk.translate(0, 0, 0);
-    sk.cylinder(50);
-    sk.pop();
-
-    sk.line(-100, 0, 0, 100, 0, 0);
 
 
   }
