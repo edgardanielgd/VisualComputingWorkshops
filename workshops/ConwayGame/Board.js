@@ -61,7 +61,6 @@ class Board {
       }
     }
 
-    //console.log(x,y,neighbors_alive);
 
     if (currently_alive && neighbors_alive < 2) return false;
     if (currently_alive && neighbors_alive < 4) return true;
@@ -139,14 +138,14 @@ class Board {
         const fillColor = this.cells[i][j] ? this.cellColor1 : this.cellColor2;
 
         // Color can be w
-        if(Array.isArray(fillColor)){
+        if (Array.isArray(fillColor)) {
           sk.fill(
             fillColor[0], fillColor[1], fillColor[2]
-          );  
+          );
         } else {
-          sk.fill( fillColor );
+          sk.fill(fillColor);
         }
-        
+
         sk.rect(
           this.offsetX + i * this.cellSize,
           this.offsetY + j * this.cellSize,
