@@ -1,104 +1,142 @@
 import config from '/workshops/AngryBirds/config.js';
 import Ground from '/workshops/AngryBirds/Ground.js';
 
-const { World } = Matter;
+const { Bounds, Constraint, Sleeping, World } = Matter;
+
+const DROP_ON_DISTANCE = true;
 
 class SlingShot {
-  constructor(body, img, world, max_distance) {
-    const options = {
-      pointA: {
-        x: body.body.position.x,
-        y: body.body.position.y
-      },
-      bodyB: body.body,
-      length: 5,
-      stiffness: 0.05,
-      collisionFilter: {
-        category: config.CATAPULT_CATEGORY
-      }
-    }
-    this.sling = Matter.Constraint.create(options);
-    this.world = world;
-    this.img = img;
-    Matter.World.add(world, this.sling);
+    constructor({ x, y, w, h, xa, ya, mouse, world, img, max_distance = 100 } = {}) {
 
-    // Max distance constraint
-    this.max_distance = max_distance;
-  }
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
 
-  show(sk) {
-    if (this.sling.bodyB != null) {
-      sk.stroke(0);
-      sk.strokeWeight(4);
-      sk.line(this.sling.pointA.x, this.sling.pointA.y,
-        this.sling.bodyB.position.x, this.sling.bodyB.position.y);
-      sk.line(this.sling.pointA.x + 20, this.sling.pointA.y,
-        this.sling.bodyB.position.x, this.sling.bodyB.position.y);
-    }
-    if (this.img) {
-      sk.imageMode(sk.CENTER);
-      sk.image(this.img, 255, 525, 150, 150);
-    }
-  }
+        this.xa = xa;
+        this.ya = ya;
+        this.world = world;
+        this.img = img;
 
-  fly(mConstraint, offsetX, offsetY) {
-    if (this.sling.bodyB != null
-      && mConstraint.mouse.button === -1
-      && (
-        Math.abs(this.sling.bodyB.position.x - this.sling.pointA.x) > 10 ||
-        Math.abs(this.sling.bodyB.position.y - this.sling.pointA.y) > 10
-      )
-    ) {
+        this.currentBird = null;
 
-      this.deattach(mConstraint);
+        this.constraint = null;
+
+        this.dragging = false;
+
+        // Create a custom mouse constraint
+        this.mouse = mouse;
+
+        // Max distance constraint
+        this.max_distance = max_distance;
     }
 
-  }
+    show(sk, boundaries) {
 
-  hasBird() {
-    return this.sling.bodyB != null;
-  }
+        const should_not_show = this.x - this.w / 2 < boundaries.left ||
+            this.x + this.w / 2 > boundaries.right ||
+            this.y - this.h / 2 < boundaries.top ||
+            this.y + this.h / 2 > boundaries.bottom;
 
-  attach(bird) {
-    this.sling.bodyB = bird.body;
-    
-    /*bird.collisionFilter = {
-      category: config.BIRD_CATEGORY,
-      group: -1,
-      mask: 0xFFFF & config.CATAPULT_CATEGORY
-    };*/
-  }
+        if (should_not_show) return;
 
-  deattach(mConstraint) {
-    this.sling.bodyB.collisionFilter = {
-      category: config.BOX_CATEGORY,
-      group: -1,
-      mask: 0xFFFF & ~config.MOUSE_CATEGORY
-    };
+        if (this.currentBird != null) {
+            sk.stroke(0);
+            sk.strokeWeight(4);
+            sk.line(
+                this.xa, this.ya,
+                this.currentBird.position.x, this.currentBird.position.y
+            );
+            sk.line(
+                this.xa + this.w / 10, this.ya,
+                this.currentBird.position.x, this.currentBird.position.y
+            );
+        }
 
-    this.sling.bodyB = null;
-    mConstraint.constraint.bodyB = null;
-    // World.remove( this.world, mConstraint);
-  }
-
-  reset() {
-    if (this.sling.bodyB) {
-      const diffX = this.sling.pointA.x - this.sling.bodyB.position.x;
-      const diffY = this.sling.pointA.y - this.sling.bodyB.position.y;
-
-      const distance = Math.sqrt(diffX * diffX + diffY * diffY);
-
-      if (distance >= this.max_distance)
-        // Move old object to new position
-        return true;
-
-      return false;
+        if (this.img) {
+            sk.imageMode(sk.CENTER);
+            sk.image(this.img, this.x, this.y, this.w, this.h);
+        }
     }
-  }
 
-  /* onMouseDrag(mouseConstraint) {
-    
-  }*/
+    update() {
+
+        if (!this.currentBird) return;
+
+        if (this.mouse.button === 0) {
+
+            if (this.dragging) {
+                Matter.Body.setPosition(this.currentBird, this.mouse.position);
+            }
+
+            if (Bounds.contains(this.currentBird.bounds, this.mouse.position)) {
+
+                if (this.shouldReset()) {
+
+                    if (!DROP_ON_DISTANCE) {
+                        Matter.Body.setPosition(this.currentBird, { x: this.xa, y: this.ya });
+                    } else {
+                        this.detach();
+                    }
+
+                    this.dragging = false;
+                } else {
+                    this.dragging = true;
+                }
+            }
+            else {
+                this.dragging = false;
+            }
+        } else if (this.dragging) {
+
+            // Free the bird
+            this.currentBird = null;
+            World.remove(this.world, this.constraint);
+            this.constraint = null;
+            this.dragging = false;
+        }
+    }
+
+    hasBird() {
+        return this.sling.bodyB != null;
+    }
+
+    attach(bird) {
+        if (this.constraint) {
+            World.remove(this.world, this.constraint);
+        }
+
+        this.currentBird = bird;
+
+        this.constraint = Constraint.create({
+            pointA: { x: this.xa, y: this.ya },
+            bodyB: this.currentBird,
+            length: 5,
+            stiffness: 0.005,
+            damping: 0.01,
+        });
+
+        World.add(this.world, this.constraint);
+    }
+
+    detach() {
+        if (!this.currentBird || !this.constraint) return;
+
+        this.currentBird = null;
+        World.remove(this.world, this.constraint);
+        this.constraint = null;
+    }
+
+    shouldReset() {
+        if (this.currentBird) {
+            const diffX = this.xa - this.currentBird.position.x;
+            const diffY = this.ya - this.currentBird.position.y;
+
+            const distance = Math.sqrt(diffX * diffX + diffY * diffY);
+
+            return distance >= this.max_distance;
+        }
+    }
 
 }
 
