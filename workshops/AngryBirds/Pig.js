@@ -1,13 +1,14 @@
 import config from '/workshops/AngryBirds/config.js';
+import Base from '/workshops/AngryBirds/Base.js';
 
-const BIRDS_COLLISION_DAMAGE = 0.5;
-const BOX_COLLISION_DAMAGE = 0.002;
-const WALLS_COLLISION_DAMAGE = 0.2;
+class Pig extends Base {
 
-const { Vector, Collision } = Matter;
+  static BIRDS_COLLISION_DAMAGE = 5;
+  static BOX_COLLISION_DAMAGE = 0.002;
+  static WALLS_COLLISION_DAMAGE = 0.2;
 
-class Pig {
   constructor({ x, y, r, m, img, world, life = 100 } = {}) {
+    super({ life });
     this.body = Matter.Bodies.circle(
       x, y, r, {
       restitution: 0.5,
@@ -19,7 +20,7 @@ class Pig {
     Matter.Body.setMass(this.body, m);
     Matter.World.add(world, this.body);
     this.img = img;
-    this.life = life;
+    this.initial_life = life;
   }
 
   show(sk, boundaries) {
@@ -38,37 +39,18 @@ class Pig {
     sk.imageMode(sk.CENTER);
     sk.image(this.img, 0, 0, 2 * this.body.circleRadius, 2 * this.body.circleRadius);
     sk.pop();
-  }
 
-  update(birds, walls, boxes) {
+    // Draw life bar
+    sk.push();
+    sk.noStroke();
+    sk.translate(this.body.position.x, this.body.position.y);
+    sk.fill(255, 0, 0);
+    sk.rectMode(sk.CENTER);
+    sk.rect(0, -this.body.circleRadius - 10, 2 * this.body.circleRadius, 5);
+    sk.fill(0, 255, 0);
+    sk.rect(0, -this.body.circleRadius - 10, 2 * this.body.circleRadius * this.life / this.initial_life, 5);
+    sk.pop();
 
-    const calculateDamage = (extBody, factor) => {
-      let extMomentum = Vector.mult(extBody.velocity, extBody.mass);
-      let selfMomentum = Vector.mult(this.body.velocity, this.body.mass);
-      let relativeMomentum = Vector.sub(extMomentum, selfMomentum);
-
-      let magnitude = Vector.magnitude(relativeMomentum) * factor;
-
-      return magnitude;
-    };
-
-    for (const bird of birds) {
-      if (Matter.SAT.collides(this.body, bird.body).collided) {
-        this.life -= calculateDamage(bird.body, BIRDS_COLLISION_DAMAGE);
-      }
-    }
-
-    for (const wall of walls) {
-      if (Matter.SAT.collides(this.body, wall.body).collided) {
-        this.life -= WALLS_COLLISION_DAMAGE * Vector.magnitude(this.body.velocity);
-      }
-    }
-
-    for (const box of boxes) {
-      if (Matter.SAT.collides(this.body, box.body).collided) {
-        this.life -= calculateDamage(box.body, BOX_COLLISION_DAMAGE);
-      }
-    }
   }
 
 

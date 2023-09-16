@@ -1,7 +1,15 @@
 import config from '/workshops/AngryBirds/config.js';
 
-class Bird {
-  constructor({ x, y, r, m, img, world, collision, life = 100, type = 'red' } = {}) {
+import Base from '/workshops/AngryBirds/Base.js';
+
+class Bird extends Base {
+
+  static BIRDS_COLLISION_DAMAGE = 0.05;
+  static BOX_COLLISION_DAMAGE = 0.02;
+  static WALLS_COLLISION_DAMAGE = 0.02;
+
+  constructor({ x, y, r, m, img, world, collision, life = 300, type = 'red' } = {}) {
+    super({ life, canCollide: false });
     this.body = Matter.Bodies.circle(
       x, y, r, {
       restitution: 0.5,
@@ -12,7 +20,10 @@ class Bird {
     Matter.Body.setMass(this.body, m);
     Matter.World.add(world, this.body);
     this.img = img;
-    this.life = life;
+
+    this.initial_life = life;
+    this.type = type;
+
     this.world = world;
   }
 
@@ -21,10 +32,11 @@ class Bird {
     Bird.drawBird(
       sk, this.body.position.x, this.body.position.y,
       this.body.circleRadius, this.body.angle,
-      this.img, boundaries);
+      this.img, this.life, this.initial_life, boundaries
+    );
   }
 
-  static drawBird(sk, x, y, r, a, img, boundaries) {
+  static drawBird(sk, x, y, r, a, img, l, fl, boundaries) {
 
     const should_not_show = x - r < boundaries.left ||
       x + r > boundaries.right ||
@@ -40,8 +52,22 @@ class Bird {
     sk.imageMode(sk.CENTER);
     sk.image(img, 0, 0, 2 * r, 2 * r);
     sk.pop();
-  }
 
+    // Draw life bar
+    if (l && fl) {
+      sk.push();
+      sk.noStroke();
+      sk.translate(x, y);
+      sk.fill(255, 0, 0);
+      sk.rectMode(sk.CENTER);
+      sk.rect(0, -r - 10, 2 * r, 5);
+      sk.fill(0, 255, 0);
+      sk.rect(0, -r - 10, 2 * r * l / fl, 5);
+      sk.pop();
+    }
+
+
+  }
 }
 
 export default Bird;

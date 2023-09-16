@@ -5,7 +5,7 @@ import SlingShot from '/workshops/AngryBirds/SlingShot.js';
 
 import config from '/workshops/AngryBirds/config.js';
 
-const { Engine, World, Mouse, MouseConstraint, Events } = Matter;
+const { Engine, World, Mouse, Events, Vector } = Matter;
 
 class Game {
 
@@ -14,9 +14,10 @@ class Game {
         width = 500, height = 500,
         offsetX = 0, offsetY = 0,
         backgroundImg,
-        boxImg, pigImg, catapultImg,
+        boxImg, glassImg, rockImg,
+        pigImg, catapultImg,
         redImg, blueImg,
-        yellowImg, bombImg
+        yellowImg, bombImg, bigredImg
     } = {}) {
         this.birds = [];
         this.slingshot = null;
@@ -33,6 +34,8 @@ class Game {
 
         this.backgroundImg = backgroundImg;
         this.boxImg = boxImg;
+        this.glassImg = glassImg;
+        this.rockImg = rockImg;
         this.pigImg = pigImg;
         this.catapultImg = catapultImg;
 
@@ -40,13 +43,15 @@ class Game {
         this.blueImg = blueImg;
         this.yellowImg = yellowImg;
         this.bombImg = bombImg;
+        this.bigredImg = bigredImg;
 
         // Create matter.js stuff
         this.engine = Engine.create();
         this.world = this.engine.world;
 
+        // Boolean flags to control animations and birds change
         this.levelInitialized = false;
-        this.birdLaunchedTrigger = false;
+        this.birdsMovingTrigger = false;
 
         this.canvas = canvas;
 
@@ -58,12 +63,19 @@ class Game {
             top: 0, bottom: this.height
         };
 
-        this.birdsData = null;
+        this.birdsData = [];
+        this.targetBirds = null;
+
+        // Reference to the flying bird, so that powerups can be applied here
+        this.flyingBird = null;
+
+        this.status = 0; // 0: playing, 1: win, 2: lose
     }
 
     initializeLevel(level) {
 
         this.levelInitialized = true;
+        this.status = 0;
 
         // Drop the world
         World.clear(this.world);
@@ -74,8 +86,15 @@ class Game {
                 new Box({
                     x: box.x, y: box.y,
                     w: box.w, h: box.h,
-                    img: this.boxImg,
+                    img: (
+                        box.type == "wood" ? this.boxImg :
+                            (
+                                box.type == "glass" ? this.glassImg : this.rockImg
+                            )
+                    ),
                     world: this.world,
+                    life: box.life,
+                    mass: box.life / 100,
                 })
             );
         }
@@ -87,7 +106,8 @@ class Game {
                     x: pig.x, y: pig.y,
                     r: pig.r, m: pig.m,
                     img: this.pigImg,
-                    world: this.world
+                    world: this.world,
+                    life: pig.life,
                 })
             );
         }
@@ -106,7 +126,6 @@ class Game {
             );
         }
 
-        this.birds = [];
 
         const mouse = Mouse.create(this.canvas.elt);
         mouse.pixelRatio = this.pixelDensity;
@@ -117,18 +136,61 @@ class Game {
 
         const slingshot_data = level.slingshot;
 
+
         this.slingshot = new SlingShot({
             x: slingshot_data.x, y: slingshot_data.y,
             w: slingshot_data.w, h: slingshot_data.h,
             xa: slingshot_data.xa, ya: slingshot_data.ya,
             img: this.catapultImg,
             world: this.world, mouse: mouse,
-            max_distance: 150
+            max_distance: 150,
+
+            // Callback for bird selection, first time a user moves a bird
+            onBirdSelection: () => {
+                this.flyingBird = this.slingshot.currentBird;
+            }
         });
 
-        this.birdsData = level.birds;
-
         this.currentBirdIndex = 0;
+
+        this.birds = [];
+        this.birdsData = [];
+        for (let i = 0; i < level.birds.length; i++) {
+            let element = level.birds[i];
+            element.radius = element.radius || 25;
+            element.mass = element.mass || 5;
+
+            element.x = this.slingshot.x + (i * 70);
+            element.y = this.slingshot.y + this.slingshot.h / 2 - element.radius;
+
+            element.r = 0;
+
+            let img = null;
+            switch (element.type) {
+                case 'red':
+                    img = this.redImg;
+                    break;
+                case 'blue':
+                    img = this.blueImg;
+                    break;
+                case 'yellow':
+                    img = this.yellowImg;
+                    break;
+                case 'bomb':
+                    img = this.bombImg;
+                    break;
+                case 'bigred':
+                    img = this.bigredImg;
+                    break;
+                default:
+                    img = this.redImg;
+                    break;
+            };
+
+            element.img = img;
+
+            this.birdsData.push(element);
+        }
 
         Events.on(this.engine, 'afterUpdate',
             () => {
@@ -174,34 +236,43 @@ class Game {
 
         // Draw remaining birds in queue with notation
         for (let i = this.currentBirdIndex; i < this.birdsData.length; i++) {
-            let actual_index = i - this.currentBirdIndex;
-            let birdImage = null;
+            const birdData = this.birdsData[i];
 
-            switch (this.birdsData[i].type) {
-                case 'red':
-                    birdImage = this.redImg;
-                    break;
-                case 'blue':
-                    birdImage = this.blueImg;
-                    break;
-                case 'yellow':
-                    birdImage = this.yellowImg;
-                    break;
-                case 'bomb':
-                    birdImage = this.bombImg;
-                    break;
-                default:
-                    birdImage = this.redImg;
-                    break;
-            };
             Bird.drawBird(
                 sk,
-                this.slingshot.x + (actual_index * 50),
-                this.slingshot.y + this.slingshot.h / 2 - 25,
-                25, 0,
-                birdImage,
+                birdData.x,
+                birdData.y,
+                birdData.radius,
+                birdData.r,
+                birdData.img,
+                null, null,
                 this.boundaries
             );
+
+            if (this.birdsMovingTrigger) {
+
+                // Attach bird when it is close enough to the slingshot
+                if (i == this.currentBirdIndex && Math.abs(birdData.x - this.slingshot.x) < 5) {
+
+                    this.setNextBird();
+                    this.birdsMovingTrigger = false;
+                }
+
+                // Update birds movement
+                birdData.x -= 0.5;
+                birdData.r -= 0.1;
+            }
+        }
+
+        // Finally draw the BIG text in the middle
+        sk.fill(255, 0, 0);
+        sk.textSize(50);
+        sk.textAlign(sk.CENTER, sk.CENTER);
+
+        if (this.status == 1) {
+            sk.text("YOU WIN!", this.width / 2, this.height / 2);
+        } else if (this.status == 2) {
+            sk.text("YOU LOSE!", this.width / 2, this.height / 2);
         }
 
         sk.pop();
@@ -214,38 +285,83 @@ class Game {
     setNextBird() {
         const birdData = this.birdsData[this.currentBirdIndex++];
 
-        let birdImage = null;
-        switch (birdData.type) {
-            case 'red':
-                birdImage = this.redImg;
-                break;
-            case 'blue':
-                birdImage = this.blueImg;
-                break;
-            case 'yellow':
-                birdImage = this.yellowImg;
-                break;
-            case 'bomb':
-                birdImage = this.bombImg;
-                break;
-            default:
-                birdImage = this.redImg;
-                break;
-        };
-
         const bird = new Bird({
             x: this.slingshot.xa, y: this.slingshot.ya,
-            r: 25, m: 5,
-            img: birdImage,
+            r: birdData.radius, m: birdData.mass,
+            img: birdData.img,
+            life: birdData.mass * 100,
             world: this.world,
             collision: config.BIRD_CATEGORY,
             type: birdData.type
         });
 
         this.birds.push(bird);
-        this.slingshot.attach(bird.body);
+        this.slingshot.attach(bird);
+    }
 
-        this.birdLaunchedTrigger = false;
+    onPowerup() {
+
+        // Bird shouldn't have lost any life (collided with anything
+        if (this.flyingBird && this.flyingBird.life == this.flyingBird.initial_life) {
+            switch (this.flyingBird.type) {
+                case 'yellow':
+                    Matter.Body.setVelocity(this.flyingBird.body, Vector.mult(this.flyingBird.body.velocity, 2));
+                    break;
+                case 'blue':
+                    // Split the bird into 3 (Preserve the one at the middle)
+                    let newBird = new Bird({
+                        x: this.flyingBird.body.position.x,
+                        y: this.flyingBird.body.position.y,
+                        r: this.flyingBird.body.circleRadius,
+                        m: this.flyingBird.body.mass,
+                        img: this.flyingBird.img,
+                        life: this.flyingBird.life,
+                        world: this.world,
+                        collision: config.BIRD_CATEGORY,
+                        type: this.flyingBird.type
+                    });
+
+                    // Rotate one bird to left
+                    Matter.Body.setVelocity(newBird.body, Vector.rotate(this.flyingBird.body.velocity, -Math.PI / 32));
+                    this.birds.push(newBird);
+
+                    newBird = new Bird({
+                        x: this.flyingBird.body.position.x,
+                        y: this.flyingBird.body.position.y,
+                        r: this.flyingBird.body.circleRadius,
+                        m: this.flyingBird.body.mass,
+                        img: this.flyingBird.img,
+                        life: this.flyingBird.life,
+                        world: this.world,
+                        collision: config.BIRD_CATEGORY,
+                        type: this.flyingBird.type
+                    });
+
+                    // Rotate one bird to left
+                    Matter.Body.setVelocity(newBird.body, Vector.rotate(this.flyingBird.body.velocity, Math.PI / 32));
+                    this.birds.push(newBird);
+
+                    break;
+
+                case 'bomb':
+                    // Explode the bird
+                    for (const item of this.boxes.concat(this.pigs).concat(this.birds)) {
+
+
+
+                        if (item == this.flyingBird) continue;
+
+                        const d = 0.2 * Matter.Vector.magnitude(
+                            Matter.Vector.sub(this.flyingBird.body.position, item.body.position)
+                        );
+
+                        item.life -= d;
+                    }
+                    break;
+            }
+
+            this.flyingBird = null;
+        }
     }
 
     onEngineUpdate() {
@@ -259,12 +375,44 @@ class Game {
             }
         }
 
+        const boxes_clone = [...this.boxes];
+        for (let i = 0; i < boxes_clone.length; i++) {
+            const box = boxes_clone[i];
+            box.update(this.birds, this.walls, this.boxes);
+            if (box.life <= 0) {
+                World.remove(this.world, box.body);
+                this.boxes.splice(i, 1);
+            }
+        }
+
+        const birds_clone = [...this.birds];
+        for (let i = 0; i < birds_clone.length; i++) {
+            const bird = birds_clone[i];
+            bird.update(this.birds, this.walls, this.boxes);
+            if (bird.life <= 0) {
+                World.remove(this.world, bird.body);
+                this.birds.splice(i, 1);
+            }
+        }
+
+        // Check if the game is over
+        if (this.pigs.length == 0) {
+            this.status = 1;
+        } else if (this.currentBirdIndex >= this.birdsData.length) {
+            // All birds have been used, lets check if birds are moving
+            let moving = false;
+            for (const bird of this.birds) {
+                if (bird.body.speed > 0.3 || this.slingshot.currentBird) moving = true;
+            }
+
+            if (!moving) {
+                this.status = 2;
+            }
+        }
+
         // Set the current bird
-        if (this.currentBirdIndex < this.birdsData.length && !this.slingshot.currentBird && !this.birdLaunchedTrigger) {
-            this.birdLaunchedTrigger = true;
-            setTimeout(() => {
-                this.setNextBird();
-            }, 5000);
+        if (this.currentBirdIndex < this.birdsData.length && !this.slingshot.currentBird && !this.birdsMovingTrigger) {
+            this.birdsMovingTrigger = true;
         }
     }
 }
