@@ -71,7 +71,7 @@ class SlingShot {
 
             if (Bounds.contains(this.currentBird.bounds, this.mouse.position)) {
 
-                if (this.shouldReset()) {
+                if (this.getDistance() > this.max_distance) {
 
                     if (!DROP_ON_DISTANCE) {
                         Matter.Body.setPosition(this.currentBird, { x: this.xa, y: this.ya });
@@ -89,11 +89,15 @@ class SlingShot {
             }
         } else if (this.dragging) {
 
-            // Free the bird
-            this.currentBird = null;
-            World.remove(this.world, this.constraint);
-            this.constraint = null;
-            this.dragging = false;
+            if (this.getDistance() <= 30) {
+                Matter.Body.setPosition(this.currentBird, { x: this.xa, y: this.ya });
+            } else {
+                // Drop only if there is distance between the bird and the sling
+                this.currentBird = null;
+                World.remove(this.world, this.constraint);
+                this.constraint = null;
+                this.dragging = false;
+            }
         }
     }
 
@@ -127,14 +131,14 @@ class SlingShot {
         this.constraint = null;
     }
 
-    shouldReset() {
+    getDistance() {
         if (this.currentBird) {
             const diffX = this.xa - this.currentBird.position.x;
             const diffY = this.ya - this.currentBird.position.y;
 
             const distance = Math.sqrt(diffX * diffX + diffY * diffY);
 
-            return distance >= this.max_distance;
+            return distance;
         }
     }
 

@@ -1,7 +1,15 @@
 import config from '/workshops/AngryBirds/config.js';
 
-class Box {
-  constructor({ x, y, w, h, img, color = [0, 0, 0], life = 300, world, options = {} } = {}) {
+import Base from '/workshops/AngryBirds/Base.js';
+
+class Box extends Base {
+
+  static BIRDS_COLLISION_DAMAGE = 0.5;
+  static BOX_COLLISION_DAMAGE = 0.002;
+  static WALLS_COLLISION_DAMAGE = 0.2;
+
+  constructor({ x, y, w, h, img, color = [0, 0, 0], life = 300, mass = 100, world, options = {} } = {}) {
+    super();
     this.body = Matter.Bodies.rectangle(
       x, y, w, h, {
       ...options,
@@ -14,10 +22,11 @@ class Box {
     this.h = h;
     this.img = img;
     this.color = color;
+    this.initial_life = life;
     this.life = life;
 
     if (!options.isStatic)
-      Matter.Body.setMass(this.body, 100);
+      Matter.Body.setMass(this.body, mass);
     Matter.World.add(world, this.body);
   }
 
@@ -36,6 +45,10 @@ class Box {
 
     if (this.img) {
       sk.imageMode(sk.CENTER);
+      sk.rectMode(sk.CENTER);
+      sk.stroke(0);
+      sk.strokeWeight(2);
+      sk.rect(0, 0, this.w, this.h);
       sk.image(this.img, 0, 0, this.w, this.h);
     } else {
       sk.fill(this.color[0], this.color[1], this.color[2]);
@@ -44,6 +57,19 @@ class Box {
       sk.rect(0, 0, this.w, this.h);
     }
 
+    sk.pop();
+
+    // Draw life bar (Static boxes don't have life)
+    if (this.body.isStatic) return;
+
+    sk.push();
+    sk.noStroke();
+    sk.translate(this.body.position.x, this.body.position.y);
+    sk.fill(255, 0, 0);
+    sk.rectMode(sk.CENTER);
+    sk.rect(0, -this.h / 2 + 10, this.w * 3 / 4, 5);
+    sk.fill(0, 255, 0);
+    sk.rect(0, -this.h / 2 + 10, this.w * (3 / 4) * this.life / this.initial_life, 5);
     sk.pop();
   }
 }

@@ -33,6 +33,8 @@ export default (width, height) => {
             y: 50 * (i + 1) + 155,
             w: 50,
             h: 50,
+            type: 'wood',
+            life: 100,
           });
         }
 
@@ -42,6 +44,8 @@ export default (width, height) => {
             y: 50 * (i + 1) + 155,
             w: 50,
             h: 50,
+            type: 'wood',
+            life: 100,
           });
         }
 
@@ -54,6 +58,7 @@ export default (width, height) => {
         y: height - 100,
         r: 25,
         m: 5,
+        life: 100,
       }
     ],
     walls: [

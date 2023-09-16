@@ -1,5 +1,3 @@
-
-
 export default (width, height) => {
   // Ground does always have a 10px height 
   return {
@@ -35,6 +33,8 @@ export default (width, height) => {
             y: 50 * (i + 1) + 155,
             w: 50,
             h: 50,
+            type: 'glass',
+            life: 100,
           });
         }
 
@@ -44,6 +44,8 @@ export default (width, height) => {
             y: 50 * (i + 1) + 155,
             w: 50,
             h: 50,
+            type: 'wood',
+            life: 100,
           });
         }
 
@@ -56,18 +58,21 @@ export default (width, height) => {
         y: 160,
         r: 25,
         m: 5,
+        life: 100,
       },
       {
         x: width * 3 / 4 + 75,
         y: height - 20,
         r: 25,
         m: 5,
+        life: 100,
       },
       {
         x: width * 3 / 4 + 150,
         y: 160,
         r: 25,
         m: 5,
+        life: 100,
       }
     ],
     walls: [

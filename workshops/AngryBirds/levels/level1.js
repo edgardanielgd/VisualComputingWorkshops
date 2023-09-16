@@ -12,15 +12,28 @@ export default (width, height) => {
     birds: [
       {
         type: 'red',
+        mass: 5,
+        radius: 25,
       },
       {
         type: 'blue',
+        mass: 5,
+        radius: 25,
       },
       {
         type: 'yellow',
+        mass: 5,
+        radius: 25,
       },
       {
-        type: 'red',
+        type: 'bomb',
+        mass: 5,
+        radius: 25,
+      },
+      {
+        type: 'bigred',
+        mass: 20,
+        radius: 35,
       }
     ],
     boxes: (
@@ -33,8 +46,19 @@ export default (width, height) => {
             y: height - 45,
             w: 50,
             h: 50,
+            type: 'rock',
+            life: 500,
           });
         }
+
+        _boxes.push({
+          x: width * 4 / 9,
+          y: height - 45,
+          w: 50,
+          h: 100,
+          type: 'glass',
+          life: 10,
+        });
 
         return _boxes;
       }
@@ -45,18 +69,21 @@ export default (width, height) => {
         y: height - 100,
         r: 25,
         m: 5,
+        life: 100,
       },
       {
         x: width * 10 / 16,
         y: height - 100,
         r: 25,
         m: 5,
+        life: 100,
       },
       {
         x: width * 11 / 16,
         y: height - 100,
         r: 25,
         m: 5,
+        life: 100,
       }
     ],
     walls: [
