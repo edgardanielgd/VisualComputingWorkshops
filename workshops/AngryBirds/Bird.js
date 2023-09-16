@@ -34,9 +34,6 @@ class Bird extends Base {
       this.body.circleRadius, this.body.angle,
       this.img, this.life, this.initial_life, boundaries
     );
-
-    console.log( this.life );
-    console.log( this.canCollide );
   }
 
   static drawBird(sk, x, y, r, a, img, l, fl, boundaries) {

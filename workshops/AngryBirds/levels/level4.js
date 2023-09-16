@@ -137,5 +137,4 @@ export default (width, height) => {
       }
     ]
   }
-
 };
