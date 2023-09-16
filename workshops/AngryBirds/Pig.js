@@ -3,12 +3,12 @@ import Base from '/workshops/AngryBirds/Base.js';
 
 class Pig extends Base {
 
-  static BIRDS_COLLISION_DAMAGE = 0.5;
+  static BIRDS_COLLISION_DAMAGE = 5;
   static BOX_COLLISION_DAMAGE = 0.002;
   static WALLS_COLLISION_DAMAGE = 0.2;
 
   constructor({ x, y, r, m, img, world, life = 100 } = {}) {
-    super();
+    super({ life });
     this.body = Matter.Bodies.circle(
       x, y, r, {
       restitution: 0.5,
@@ -21,7 +21,6 @@ class Pig extends Base {
     Matter.World.add(world, this.body);
     this.img = img;
     this.initial_life = life;
-    this.life = life;
   }
 
   show(sk, boundaries) {

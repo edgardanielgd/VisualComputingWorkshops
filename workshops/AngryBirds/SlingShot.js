@@ -6,7 +6,7 @@ const { Bounds, Constraint, Sleeping, World } = Matter;
 const DROP_ON_DISTANCE = true;
 
 class SlingShot {
-    constructor({ x, y, w, h, xa, ya, mouse, world, img, max_distance = 100 } = {}) {
+    constructor({ x, y, w, h, xa, ya, mouse, world, img, max_distance = 100, onBirdSelection = null } = {}) {
 
         this.x = x;
         this.y = y;
@@ -29,9 +29,14 @@ class SlingShot {
 
         // Max distance constraint
         this.max_distance = max_distance;
+
+        // Callback for bird selection, first time a user moves a bird
+        this.onBirdSelection = onBirdSelection;
     }
 
     show(sk, boundaries) {
+
+        sk.push();
 
         const should_not_show = this.x - this.w / 2 < boundaries.left ||
             this.x + this.w / 2 > boundaries.right ||
@@ -45,11 +50,11 @@ class SlingShot {
             sk.strokeWeight(4);
             sk.line(
                 this.xa, this.ya,
-                this.currentBird.position.x, this.currentBird.position.y
+                this.currentBird.body.position.x, this.currentBird.body.position.y
             );
             sk.line(
                 this.xa + this.w / 10, this.ya,
-                this.currentBird.position.x, this.currentBird.position.y
+                this.currentBird.body.position.x, this.currentBird.body.position.y
             );
         }
 
@@ -57,6 +62,8 @@ class SlingShot {
             sk.imageMode(sk.CENTER);
             sk.image(this.img, this.x, this.y, this.w, this.h);
         }
+
+        sk.pop();
     }
 
     update() {
@@ -66,15 +73,20 @@ class SlingShot {
         if (this.mouse.button === 0) {
 
             if (this.dragging) {
-                Matter.Body.setPosition(this.currentBird, this.mouse.position);
+                Matter.Body.setPosition(this.currentBird.body, this.mouse.position);
             }
 
-            if (Bounds.contains(this.currentBird.bounds, this.mouse.position)) {
+            if (Bounds.contains(this.currentBird.body.bounds, this.mouse.position)) {
+
+                // Bird has been pressed
+                if (this.onBirdSelection) {
+                    this.onBirdSelection();
+                }
 
                 if (this.getDistance() > this.max_distance) {
 
                     if (!DROP_ON_DISTANCE) {
-                        Matter.Body.setPosition(this.currentBird, { x: this.xa, y: this.ya });
+                        Matter.Body.setPosition(this.currentBird.body, { x: this.xa, y: this.ya });
                     } else {
                         this.detach();
                     }
@@ -90,19 +102,16 @@ class SlingShot {
         } else if (this.dragging) {
 
             if (this.getDistance() <= 30) {
-                Matter.Body.setPosition(this.currentBird, { x: this.xa, y: this.ya });
+                Matter.Body.setPosition(this.currentBird.body, { x: this.xa, y: this.ya });
             } else {
                 // Drop only if there is distance between the bird and the sling
-                this.currentBird = null;
-                World.remove(this.world, this.constraint);
-                this.constraint = null;
-                this.dragging = false;
+                this.detach();
             }
         }
     }
 
     hasBird() {
-        return this.sling.bodyB != null;
+        return this.currentBird != null;
     }
 
     attach(bird) {
@@ -114,11 +123,17 @@ class SlingShot {
 
         this.constraint = Constraint.create({
             pointA: { x: this.xa, y: this.ya },
-            bodyB: this.currentBird,
+            bodyB: this.currentBird.body,
             length: 5,
             stiffness: 0.005,
             damping: 0.01,
         });
+
+        // Modify bird so that i won't collide with anything
+        this.currentBird.body.collisionFilter = {
+            ... this.currentBird.body.collisionFilter,
+            mask: 0x0000,
+        }
 
         World.add(this.world, this.constraint);
     }
@@ -126,15 +141,22 @@ class SlingShot {
     detach() {
         if (!this.currentBird || !this.constraint) return;
 
+        // Modify bird so that i won't collide with anything
+        this.currentBird.body.collisionFilter = {
+            ... this.currentBird.body.collisionFilter,
+            mask: 0xFFFF,
+        }
+
         this.currentBird = null;
         World.remove(this.world, this.constraint);
         this.constraint = null;
+        this.dragging = false;
     }
 
     getDistance() {
         if (this.currentBird) {
-            const diffX = this.xa - this.currentBird.position.x;
-            const diffY = this.ya - this.currentBird.position.y;
+            const diffX = this.xa - this.currentBird.body.position.x;
+            const diffY = this.ya - this.currentBird.body.position.y;
 
             const distance = Math.sqrt(diffX * diffX + diffY * diffY);
 

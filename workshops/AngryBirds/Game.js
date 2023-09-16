@@ -5,7 +5,7 @@ import SlingShot from '/workshops/AngryBirds/SlingShot.js';
 
 import config from '/workshops/AngryBirds/config.js';
 
-const { Engine, World, Mouse, Events } = Matter;
+const { Engine, World, Mouse, Events, Vector } = Matter;
 
 class Game {
 
@@ -51,7 +51,6 @@ class Game {
 
         // Boolean flags to control animations and birds change
         this.levelInitialized = false;
-        this.birdLaunchedTrigger = false;
         this.birdsMovingTrigger = false;
 
         this.canvas = canvas;
@@ -66,11 +65,17 @@ class Game {
 
         this.birdsData = [];
         this.targetBirds = null;
+
+        // Reference to the flying bird, so that powerups can be applied here
+        this.flyingBird = null;
+
+        this.status = 0; // 0: playing, 1: win, 2: lose
     }
 
     initializeLevel(level) {
 
         this.levelInitialized = true;
+        this.status = 0;
 
         // Drop the world
         World.clear(this.world);
@@ -138,7 +143,12 @@ class Game {
             xa: slingshot_data.xa, ya: slingshot_data.ya,
             img: this.catapultImg,
             world: this.world, mouse: mouse,
-            max_distance: 150
+            max_distance: 150,
+
+            // Callback for bird selection, first time a user moves a bird
+            onBirdSelection: () => {
+                this.flyingBird = this.slingshot.currentBird;
+            }
         });
 
         this.currentBirdIndex = 0;
@@ -254,6 +264,17 @@ class Game {
             }
         }
 
+        // Finally draw the BIG text in the middle
+        sk.fill(255, 0, 0);
+        sk.textSize(50);
+        sk.textAlign(sk.CENTER, sk.CENTER);
+
+        if (this.status == 1) {
+            sk.text("YOU WIN!", this.width / 2, this.height / 2);
+        } else if (this.status == 2) {
+            sk.text("YOU LOSE!", this.width / 2, this.height / 2);
+        }
+
         sk.pop();
     }
 
@@ -275,7 +296,72 @@ class Game {
         });
 
         this.birds.push(bird);
-        this.slingshot.attach(bird.body);
+        this.slingshot.attach(bird);
+    }
+
+    onPowerup() {
+
+        // Bird shouldn't have lost any life (collided with anything
+        if (this.flyingBird && this.flyingBird.life == this.flyingBird.initial_life) {
+            switch (this.flyingBird.type) {
+                case 'yellow':
+                    Matter.Body.setVelocity(this.flyingBird.body, Vector.mult(this.flyingBird.body.velocity, 2));
+                    break;
+                case 'blue':
+                    // Split the bird into 3 (Preserve the one at the middle)
+                    let newBird = new Bird({
+                        x: this.flyingBird.body.position.x,
+                        y: this.flyingBird.body.position.y,
+                        r: this.flyingBird.body.circleRadius,
+                        m: this.flyingBird.body.mass,
+                        img: this.flyingBird.img,
+                        life: this.flyingBird.life,
+                        world: this.world,
+                        collision: config.BIRD_CATEGORY,
+                        type: this.flyingBird.type
+                    });
+
+                    // Rotate one bird to left
+                    Matter.Body.setVelocity(newBird.body, Vector.rotate(this.flyingBird.body.velocity, -Math.PI / 32));
+                    this.birds.push(newBird);
+
+                    newBird = new Bird({
+                        x: this.flyingBird.body.position.x,
+                        y: this.flyingBird.body.position.y,
+                        r: this.flyingBird.body.circleRadius,
+                        m: this.flyingBird.body.mass,
+                        img: this.flyingBird.img,
+                        life: this.flyingBird.life,
+                        world: this.world,
+                        collision: config.BIRD_CATEGORY,
+                        type: this.flyingBird.type
+                    });
+
+                    // Rotate one bird to left
+                    Matter.Body.setVelocity(newBird.body, Vector.rotate(this.flyingBird.body.velocity, Math.PI / 32));
+                    this.birds.push(newBird);
+
+                    break;
+
+                case 'bomb':
+                    // Explode the bird
+                    for (const item of this.boxes.concat(this.pigs).concat(this.birds)) {
+
+
+
+                        if (item == this.flyingBird) continue;
+
+                        const d = 0.2 * Matter.Vector.magnitude(
+                            Matter.Vector.sub(this.flyingBird.body.position, item.body.position)
+                        );
+
+                        item.life -= d;
+                    }
+                    break;
+            }
+
+            this.flyingBird = null;
+        }
     }
 
     onEngineUpdate() {
@@ -306,6 +392,21 @@ class Game {
             if (bird.life <= 0) {
                 World.remove(this.world, bird.body);
                 this.birds.splice(i, 1);
+            }
+        }
+
+        // Check if the game is over
+        if (this.pigs.length == 0) {
+            this.status = 1;
+        } else if (this.currentBirdIndex >= this.birdsData.length) {
+            // All birds have been used, lets check if birds are moving
+            let moving = false;
+            for (const bird of this.birds) {
+                if (bird.body.speed > 0.3 || this.slingshot.currentBird) moving = true;
+            }
+
+            if (!moving) {
+                this.status = 2;
             }
         }
 

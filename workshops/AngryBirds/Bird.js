@@ -9,7 +9,7 @@ class Bird extends Base {
   static WALLS_COLLISION_DAMAGE = 0.02;
 
   constructor({ x, y, r, m, img, world, collision, life = 300, type = 'red' } = {}) {
-    super();
+    super({ life, canCollide: false });
     this.body = Matter.Bodies.circle(
       x, y, r, {
       restitution: 0.5,
@@ -22,7 +22,6 @@ class Bird extends Base {
     this.img = img;
 
     this.initial_life = life;
-    this.life = life;
     this.type = type;
 
     this.world = world;

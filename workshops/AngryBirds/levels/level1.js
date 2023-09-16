@@ -11,17 +11,17 @@ export default (width, height) => {
     },
     birds: [
       {
-        type: 'red',
-        mass: 5,
-        radius: 25,
-      },
-      {
-        type: 'blue',
+        type: 'bomb',
         mass: 5,
         radius: 25,
       },
       {
         type: 'yellow',
+        mass: 5,
+        radius: 25,
+      },
+      {
+        type: 'blue',
         mass: 5,
         radius: 25,
       },

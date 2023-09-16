@@ -13,8 +13,7 @@ import Game from '/workshops/AngryBirds/Game.js';
 import level1 from '/workshops/AngryBirds/levels/level1.js';
 import level2 from '/workshops/AngryBirds/levels/level2.js';
 import level3 from '/workshops/AngryBirds/levels/level3.js';
-
-const { Engine, World, Mouse, MouseConstraint, Events } = Matter;
+import level4 from '/workshops/AngryBirds/levels/level4.js';
 
 // Width of buttons column
 const buttonsColumnWidth = width * 0.20;
@@ -54,18 +53,26 @@ let s = (sk) => {
     // Draw buttons panel
     sk.fill(0);
     sk.rect(0, 0, buttonsColumnWidth, height);
-    const title = buildTitle(
+
+    buildTitle(
       sk, "Angry Birds",
       5, 80, buttonsColumnWidth - 10, 80
     );
-    const credits = buildCredits(
+
+    sk.textSize(20);
+    sk.textAlign(sk.CENTER, sk.TOP);
+    sk.fill(255);
+    sk.text("Use [Space] to activate some birds powers (must have full health)", 5, 300, buttonsColumnWidth - 10, 80);
+
+    buildCredits(
       sk, 5, 380, buttonsColumnWidth - 10, 500
     );
 
     // Draw required buttons
-    const backButton = buildBackButton(
+    buildBackButton(
       sk, 10, 10
     );
+
     const l1 = buildCommonButton(
       sk, 'level 1', 30, 150, "danger"
     );
@@ -78,6 +85,10 @@ let s = (sk) => {
       sk, 'level 3', 190, 150, "danger"
     );
 
+    const l4 = buildCommonButton(
+      sk, 'level 4', 110, 200, "danger"
+    );
+
     l1.mouseClicked(() => {
       changeLevel(level1(width - buttonsColumnWidth, height));
     });
@@ -88,6 +99,10 @@ let s = (sk) => {
 
     l3.mouseClicked(() => {
       changeLevel(level3(width - buttonsColumnWidth, height));
+    });
+
+    l4.mouseClicked(() => {
+      changeLevel(level4(width - buttonsColumnWidth, height));
     });
   }
 
@@ -118,7 +133,9 @@ let s = (sk) => {
   }
 
   sk.keyPressed = () => {
-
+    if (sk.key === ' ') {
+      game.onPowerup();
+    }
   }
 }
 

@@ -9,7 +9,7 @@ class Box extends Base {
   static WALLS_COLLISION_DAMAGE = 0.2;
 
   constructor({ x, y, w, h, img, color = [0, 0, 0], life = 300, mass = 100, world, options = {} } = {}) {
-    super();
+    super({ life });
     this.body = Matter.Bodies.rectangle(
       x, y, w, h, {
       ...options,
@@ -23,7 +23,6 @@ class Box extends Base {
     this.img = img;
     this.color = color;
     this.initial_life = life;
-    this.life = life;
 
     if (!options.isStatic)
       Matter.Body.setMass(this.body, mass);
