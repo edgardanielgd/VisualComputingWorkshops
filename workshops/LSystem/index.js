@@ -1,103 +1,76 @@
 import p5 from '/lib/p5.js';
-import buildCommonButton from '/utils/CommonButton.js';
 import buildTitle from '/utils/Title.js';
-import buildCredits from '/utils/Credits.js'
 import buildBackButton from '/utils/BackButton.js';
+import buildCommonButton from '/utils/CommonButton.js';
+import buildCredits from '/utils/Credits.js'
+import Tree from '/workshops/LSystem/tree.js';
+import rules from '/workshops/LSystem/rules.js';
 
-/*let rules = {
-  "X": "F+[[X]-X]-F[-FX]+X",
-  "F": "FF"
-}*/
+const width = 1300;
+const height = 800;
 
-let rules = {
-  "F": "F[+F]F[-F]F"
-}
+const buttonsColumnWidth = width * 0.20;
 
-let len = 40; // Aumenté la longitud para que sea visible
-let ang = 25;
-let drawRules;
-const buttonsColumnWidth = 600 * 0.20;
-let word = "F";
+
 let s = (sk) => {
-
-  function mouseReleased(){
-    word = generate();
-    console.log(word);
-    sk.redraw();
-  }
-
-  function generate() {
-    let next = "";
-    for(let i = 0; i < word.length; i ++) {
-      let c = word[i];
-      if(c in rules) {
-        next += rules[c];
-      } else {
-        next += c;
-      }
-    }
-    
-    return next;
-  }
   
-  sk.setup = () =>{
-
-    const canvas = sk.createCanvas(600, 600,sk.WEBGL);
-    canvas.parent('main-container');
-    canvas.position(500, 0);
+  const myTree = new Tree('X',rules['1'], sk);
+  
+  const drawInterface = () => {
     // Draw buttons panel
     sk.fill(0);
-    sk.rect(0, 0, buttonsColumnWidth, 600);
-
+    sk.rect(-(width/2), -(height/2), buttonsColumnWidth, height);
+    
+    const title = buildTitle(
+      sk, "L-System Tree",
+      5, 80,10, buttonsColumnWidth - 10, 80
+    );
 
     // Draw required buttons
     const backButton = buildBackButton(
-      sk, 30, 2
+      sk, 10, 10
     );
 
-    const generateBtn = buildCommonButton(
-      sk, 'Generao pa!', 30, 140, "danger"
+    const generateButton = buildCommonButton(
+      sk, 'Generate', 90, 180, "danger"
     );
 
-    generateBtn.mouseClicked(() => {
-      mouseReleased();
+    const aTree = buildCommonButton(
+      sk, 'Arbol A', 90, 250, "danger"
+    );
+    const bTree = buildCommonButton(
+      sk, 'Arbol B', 90, 300, "danger"
+    );
+
+    generateButton.mouseClicked(() => {
+      myTree.btnReleased();
+      sk.redraw();
     });
 
-    drawRules ={
-      'F': () =>{
-        sk.stroke(100, 50, 0);
-        sk.strokeWeight(5);
-        sk.line(0, 0, 0, 0, 0, -len); // Proporciona coordenadas 3D para sk.line()
-        sk.translate(0, 0, -len); // Ajusta la posición en el eje z
-        
-      },
-      '+': () =>{
-        sk.rotateX(sk.PI/180 * -ang); // Utiliza rotateY para rotar en el eje y
-      },
-      '-': () =>{
-        sk.rotateY(sk.PI/180 * ang); // Utiliza rotateY para rotar en el eje y
-      },
-      '[': () => {sk.push()} ,
-      ']': () => {sk.pop()},
-    }
-    //sk.noLoop();
-    //drawInterface();
+    aTree.mouseClicked(() => {
+       
+    });
+
+    const credits = buildCredits(
+      sk, 5, 550, buttonsColumnWidth - 10, 500
+    );
+
+    
   }
 
+  sk.setup = () =>{
+    const canvas = sk.createCanvas(width, height, sk.WEBGL);
+    canvas.position(0, 0);
+
+    sk.background(100);
+    
+    drawInterface();
+  }
+  
   sk.draw = () =>{
     sk.orbitControl(2,2,2);
-    sk.background(100); 
-    sk.translate(0, sk.height/4);
-    //sk.rotate(sk.PI/180 * ang);
-    sk.push();
+    myTree.draw(sk,width,height);
 
-    for(let i = 0; i < word.length; i ++) {
-      let c = word[i];
-      if(c in drawRules) {
-        drawRules[c]();
-      }  
-    }
-    sk.pop();
   }
 }
 
