@@ -27,6 +27,7 @@ let s = (sk) => {
 
     let infoText = "Botón generate para renderizar<br>"+
                 "el siguiente nivel del árbol.<br>"+
+                "No generar más de 6 veces cada árbol<br> por problemas de rendimiento.<br>"+
                 "Clk izquierdo: rotar.<br>"+
                 "Clk derecho: mover.<br>"+
                 "Scroll: Zoom.";
@@ -38,14 +39,14 @@ let s = (sk) => {
     h2.position(30, 80);
 
     let credits = sk.createElement('p', creditsText);
-    credits.style('font-size', '18px');
+    credits.style('font-size', '16px');
     credits.style('color', 'white');
     credits.style('line-height', '1.5'); 
     credits.html(creditsText); 
-    credits.position(30, 650);
+    credits.position(30, 670);
 
     let info = sk.createElement('p', infoText);
-    info.style('font-size', '18px');
+    info.style('font-size', '16px');
     info.style('color', 'white');
     info.style('line-height', '1.5'); 
     info.html(infoText); 
