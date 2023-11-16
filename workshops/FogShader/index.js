@@ -8,7 +8,8 @@ let s = (sk) => {
   let fogNear = 0.7;
   let fogFar = 0.9;
   let camera = null;
-  let boxMaterial;
+  let rotationAngle = 0;
+  let texture;
 
   const checkKeyUpdate = () => {
     let x_offset = 0;
@@ -47,6 +48,11 @@ let s = (sk) => {
     if (sk.keyIsDown(72)) { // H
       xz_rotation = 0.05;
     }
+
+    // Posición camara
+    // console.log("Posición de la cámara (X, Y, Z):", camera.eyeX, camera.eyeY, camera.eyeZ);
+    // console.log("Ángulo de la cámara (X, Y, Z):", camera.centerX, camera.centerY, camera.centerZ);
+
     camera.move(x_offset, y_offset, z_offset);
     camera.pan(xy_rotation);
     camera.tilt(xz_rotation);
@@ -122,10 +128,28 @@ let s = (sk) => {
     drawInterface();
 
     camera = sk.createCamera();
-    camera.camera(-724.5352768769255, -192.6275932085752, 239.75964787170642, -278.4931223517886, 235.8693822425987, -72.3901279843858, 0, 1, 0);
+    camera.camera(-728.4198549126278, -234.7516234526818, 187.85270602059123, -387.10488342035615, 241.10464976130223, -182.37114617427332, 0, 1, 0);
 
     sk.stroke(0);
     sk.fill(255);
+
+    let pg = sk.createGraphics(100, 100);
+    pg.clear();
+
+    pg.colorMode(sk.HSB, 360, 50, 50);
+    for (let j = 0; j < 100; j++) {
+      pg.stroke(j * 3, 100, 100);
+      pg.line(0, j, 100, j);
+    }
+    pg.colorMode(sk.RGB);
+
+    pg.stroke(255, 0, 0);
+    pg.strokeWeight(10);
+    pg.line(30, 20, 30, 80);
+    pg.line(30, 20, 70, 20);
+    pg.line(30, 40, 60, 40);
+
+    texture = pg.get();
   }
 
   sk.draw = () => {
@@ -137,28 +161,14 @@ let s = (sk) => {
     fogShader.setUniform("uFogNear", fogNear);
     fogShader.setUniform("uFogFar", fogFar);
 
-    for (let i = 0; i < 5; i++) {
+    rotationAngle += 0.02;
+
+    for (let i = 0; i < 15; i++) {
       sk.push();
-      sk.translate((i * 300) - 500, 200 * i, 0);
-      sk.rotateY(sk.PI / 2);
-
-      let pg = sk.createGraphics(100, 100);
-      pg.clear();
-
-      pg.colorMode(sk.HSB, 360, 50, 50);
-      for (let j = 0; j < 100; j++) {
-        pg.stroke(j * 3, 100, 100);
-        pg.line(0, j, 100, j);
-      }
-      pg.colorMode(sk.RGB);
-
-      pg.stroke(255, 0, 0);
-      pg.strokeWeight(10);
-      pg.line(30, 20, 30, 80);
-      pg.line(30, 20, 70, 20);
-      pg.line(30, 40, 60, 40);
-
-      let texture = pg.get();
+      sk.translate((i * 400) - 500, 200 * i, 0);
+      sk.rotateZ(rotationAngle);
+      sk.rotateY(rotationAngle - ((i * 4) / 100));
+      sk.rotateX(rotationAngle - ((i * 4) / 100));
 
       fogShader.setUniform("uFogNear", fogNear);
       fogShader.setUniform("uFogFar", fogFar);
