@@ -1,30 +1,24 @@
 import p5 from '/lib/p5.js';
-import buildTitle from '/utils/Title.js';
 import buildBackButton from '/utils/BackButton.js';
+import config from '/workshops/TuringModel/config.js';
 import buildCommonButton from '/utils/CommonButton.js';
-import buildCredits from '/utils/Credits.js'
+
+import Labo from '/workshops/TuringModel/Labo.js';
 
 const width = 1300;
 const height = 800;
-
-const buttonsColumnWidth = width * 0.20;
 
 let wolf;
 let myTexture;
 let lab;
 
-const w = 800; // Ancho del lienzo
-const h = 600; // Alto del lienzo
-const cSiz = 5; // Tamaño de la celda
-const pCnt = 500; // Cantidad de iteraciones del sistema de reacción-difusión
-
-
-
+const w = 1080; // Ancho del lienzo
+const h = 720; // Alto del lienzo
 
 let s = (sk) => {
 
-  sk.preload = () =>{
-     wolf = sk.loadModel('/workshops/TuringModel/wolf.obj');
+  sk.preload = () => {
+    wolf = sk.loadModel('/workshops/TuringModel/wolf.obj');
   }
 
   const drawInterface = () => {
@@ -42,26 +36,136 @@ let s = (sk) => {
     h2.style('font-family', 'Georgia, sans-serif');
     h2.position(30, 80);
 
+    /* Input sliders */
+
+    // Diffusion rate of U
+    let diffULabel = sk.createElement('p', 'Diff U');
+    diffULabel.style('font-size', '20px');
+    diffULabel.style('color', 'black');
+    diffULabel.position(240, 140);
+
+    let diffUSlider = sk.createSlider(0, 1, config.DIFF_U, 0.01);
+    diffUSlider.position(30, 150);
+    diffUSlider.style('width', '200px');
+
+    // Diffusion rate of V
+    let diffVLabel = sk.createElement('p', 'Diff V');
+    diffVLabel.style('font-size', '20px');
+    diffVLabel.style('color', 'black');
+    diffVLabel.position(240, 190);
+
+    let diffVSlider = sk.createSlider(0, 1, config.DIFF_V, 0.01);
+    diffVSlider.position(30, 200);
+    diffVSlider.style('width', '200px');
+
+    // Min feed Range
+    let minFeedLabel = sk.createElement('p', 'Min Feed Range');
+    minFeedLabel.style('font-size', '20px');
+    minFeedLabel.style('color', 'black');
+    minFeedLabel.position(240, 240);
+
+    let minFeedSlider = sk.createSlider(0, 1, config.MIN_FEED_RANGE, 0.01);
+    minFeedSlider.position(30, 250);
+    minFeedSlider.style('width', '200px');
+
+    // Max feed Range
+    let maxFeedLabel = sk.createElement('p', 'Max Feed Range');
+    maxFeedLabel.style('font-size', '20px');
+    maxFeedLabel.style('color', 'black');
+    maxFeedLabel.position(240, 290);
+
+    let maxFeedSlider = sk.createSlider(0, 1, config.MAX_FEED_RANGE, 0.01);
+    maxFeedSlider.position(30, 300);
+    maxFeedSlider.style('width', '200px');
+
+    // Min kill Range
+    let minKillLabel = sk.createElement('p', 'Min Kill Range');
+    minKillLabel.style('font-size', '20px');
+    minKillLabel.style('color', 'black');
+    minKillLabel.position(240, 340);
+
+    let minKillSlider = sk.createSlider(0, 1, config.MIN_KILL_RANGE, 0.01);
+    minKillSlider.position(30, 350);
+    minKillSlider.style('width', '200px');
+
+    // Max kill Range
+    let maxKillLabel = sk.createElement('p', 'Max Kill Range');
+    maxKillLabel.style('font-size', '20px');
+    maxKillLabel.style('color', 'black');
+    maxKillLabel.position(240, 390);
+
+    let maxKillSlider = sk.createSlider(0, 1, config.MAX_KILL_RANGE, 0.01);
+    maxKillSlider.position(30, 400);
+    maxKillSlider.style('width', '200px');
+
+    // Background color picker
+    let backgroundColorPickerLabel = sk.createElement('p', 'Background color');
+    backgroundColorPickerLabel.style('font-size', '20px');
+    backgroundColorPickerLabel.style('color', 'black');
+    backgroundColorPickerLabel.position(240, 440);
+
+    let backgroundColorPicker = sk.createColorPicker(config.DEFAULT_BACKGROUND_COLOR);
+    backgroundColorPicker.position(30, 450);
+    backgroundColorPicker.style('width', '200px');
+
+    // Dot color picker
+    let dotColorPickerLabel = sk.createElement('p', 'Dot color');
+    dotColorPickerLabel.style('font-size', '20px');
+    dotColorPickerLabel.style('color', 'black');
+    dotColorPickerLabel.position(240, 490);
+
+    let dotColorPicker = sk.createColorPicker(config.DEFAULT_BACKGROUND_COLOR);
+    dotColorPicker.position(30, 500);
+    dotColorPicker.style('width', '200px');
+
+    // Cell size
+    let cellSizeLabel = sk.createElement('p', 'Cell Size');
+    cellSizeLabel.style('font-size', '20px');
+    cellSizeLabel.style('color', 'black');
+    cellSizeLabel.position(240, 540);
+
+    let cellSizeSlider = sk.createSlider(1, 5, config.CELL_SIZE, 1);
+    cellSizeSlider.position(30, 550);
+    cellSizeSlider.style('width', '200px');
+
     let credits = sk.createElement('p', creditsText);
     credits.style('font-size', '16px');
     credits.style('color', 'black');
     credits.style('line-height', '1.5');
     credits.html(creditsText);
-    credits.position(30, 450);
-
+    credits.position(30, 600);
 
     // Draw required buttons
-    const backButton = buildBackButton(
-      sk, 10, 10
+    buildBackButton(sk, 10, 10);
+    const resetButton = buildCommonButton(
+      sk, 'Apply', 300, 650, "danger"
     );
 
+    // Link buttons with functions
+    diffUSlider.input(() => { config.DIFF_U = diffUSlider.value() })
+    diffVSlider.input(() => { config.DIFF_V = diffVSlider.value() })
+    minFeedSlider.input(() => { config.MIN_FEED_RANGE = minFeedSlider.value() })
+    maxFeedSlider.input(() => { config.MAX_FEED_RANGE = maxFeedSlider.value() })
+    minKillSlider.input(() => { config.MIN_KILL_RANGE = minKillSlider.value() })
+    maxKillSlider.input(() => { config.MAX_KILL_RANGE = maxKillSlider.value() })
+    cellSizeSlider.input(() => { config.CELL_SIZE = cellSizeSlider.value() })
+    backgroundColorPicker.input(() => { config.DEFAULT_BACKGROUND_COLOR = backgroundColorPicker.value() })
+    dotColorPicker.input(() => { config.DEFAULT_DOT_COLOR = dotColorPicker.value() })
+
+    resetButton.mouseClicked(() => {
+      lab = new Labo(sk, config.CELL_SIZE, width, height);
+      lab.init();
+
+      myTexture = sk.createGraphics(w, h);
+      myTexture.image(sk.get(), 0, 0, w, h);
+    })
   }
 
   sk.setup = () => {
     const canvas = sk.createCanvas(w, h, sk.WEBGL);
     canvas.position(0, 0);
     // Inicializa el sistema de reacción-difusión
-    lab = new Labo(cSiz);
+    lab = new Labo(sk, config.CELL_SIZE, width, height);
     lab.init();
 
     // Crea una textura a partir de la imagen generada por el sistema de reacción-difusión
@@ -80,150 +184,12 @@ let s = (sk) => {
 
     // Aplica la textura al modelo
     sk.texture(myTexture);
-    lab.observe();
+    lab.observe(myTexture);
     sk.orbitControl(2, 1, 0.1);
     sk.translate(100, 50, 0);
     sk.scale(50, -50, 50);
     sk.model(wolf);
-
   }
-
-
-  class Labo {
-    cellSize;
-    matrixW;
-    matrixH;
-    diffU;
-    diffV;
-    cells;
-
-    constructor(_cSiz) {
-      this.cellSize = _cSiz;
-      this.matrixW = sk.floor(width / this.cellSize);
-      this.matrixH = sk.floor(height / this.cellSize);
-      this.diffU = 0.9;
-      this.diffV = 0.1;
-      this.cells = new Array();
-    }
-
-    /*
-     * init : initialize reaction-diffusion system.
-     */
-    init() {
-      for (let x = 0; x < this.matrixW; x++) {
-        this.cells[x] = [];
-        for (let y = 0; y < this.matrixH; y++) {
-          this.cells[x][y] = new Cell(
-            sk.map(x, 0.0, this.matrixW, 0.03, 0.12),   // feed
-            sk.map(y, 0.0, this.matrixH, 0.045, 0.055), // kill
-            1,                         // u
-            (sk.random(1) < 0.1) ? 1 : 0  // v
-          );
-        }
-      }
-    }
-
-    
-
-    /*
-     * proceed : proceed reaction-diffusion calculation.
-     */
-    proceed() {
-
-      // calculate Laplacian
-      const nD = Array(); // neighbors on diagonal
-      const nH = Array(); // neighbors on vertical and horizontal
-      for (let x = 0; x < this.matrixW; x++) {
-        for (let y = 0; y < this.matrixH; y++) {
-
-          // set neighbors
-          nD[0] = this.cells[sk.max(x - 1, 0)][sk.max(y - 1, 0)];
-          nD[1] = this.cells[sk.max(x - 1, 0)][sk.min(y + 1, this.matrixH - 1)];
-          nD[2] = this.cells[sk.min(x + 1, this.matrixW - 1)][sk.max(y - 1, 0)];
-          nD[3] = this.cells[sk.min(x + 1, this.matrixW - 1)][sk.min(y + 1, this.matrixH - 1)];
-          nH[0] = this.cells[sk.max(x - 1, 0)][y];
-          nH[1] = this.cells[x][sk.max(y - 1, 0)];
-          nH[2] = this.cells[x][sk.min(y + 1, this.matrixH - 1)];
-          nH[3] = this.cells[sk.min(x + 1, this.matrixW - 1)][y];
-
-          // Laplacian
-          let c = this.cells[x][y];
-          let sum = 0.0;
-          for (let i = 0; i < 4; i++) {
-            sum += nD[i].valU * 0.05 + nH[i].valU * 0.2;
-          }
-          sum -= c.valU;
-          c.lapU = sum;
-
-          sum = 0.0;
-          for (let i = 0; i < 4; i++) {
-            sum += nD[i].valV * 0.05 + nH[i].valV * 0.2;
-          }
-          sum -= c.valV;
-          c.lapV = sum;
-
-        }
-      }
-
-      // reaction-diffusion
-      for (let x = 0; x < this.matrixW; x++) {
-        for (let y = 0; y < this.matrixH; y++) {
-          let c = this.cells[x][y];
-          let reaction = c.valU * c.valV * c.valV;
-          let inflow = c.feed * (1.0 - c.valU);
-          let outflow = (c.feed + c.kill) * c.valV;
-          c.valU = c.valU + this.diffU * c.lapU - reaction + inflow;
-          c.valV = c.valV + this.diffV * c.lapV + reaction - outflow;
-          c.standardization();
-        }
-      }
-    }
-
-    /*
-     * observe : display the result.
-     */
-    observe() {
-      myTexture.background(0);
-      myTexture.fill(255);
-      myTexture.noStroke();
-      for (let x = 0; x < this.matrixW; x++) {
-        for (let y = 0; y < this.matrixH; y++) {
-          let cx = x * this.cellSize;
-          let cy = y * this.cellSize;
-          let cs = this.cells[x][y].valU * this.cellSize;
-          myTexture.rect(cx, cy, cs, cs);
-        }
-      }
-    }
-  }
-
-  /*
-   * Cell : holds cell informations.
-   */
-  class Cell {
-
-    feed;
-    kill;
-    valU;
-    valV;
-    lapU;
-    lapV;
-
-    constructor(_f, _k, _u, _v) {
-      this.feed = _f;
-      this.kill = _k;
-      this.valU = _u;
-      this.valV = _v;
-      this.lapU = 0;
-      this.lapV = 0;
-    }
-
-    standardization() {
-      this.valU = sk.constrain(this.valU, 0, 1);
-      this.valV = sk.constrain(this.valV, 0, 1);
-    }
-  }
-
 }
 
 const P5 = new p5(s, "main-container");
